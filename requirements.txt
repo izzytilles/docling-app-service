@@ -1,0 +1,7 @@
+dotenv
+docling
+flask
+requests
+langchain_experimental
+langchain_openai
+spacy
