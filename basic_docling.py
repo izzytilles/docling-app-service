@@ -4,6 +4,10 @@ import utils
 
 app = Flask(__name__)
 
+@app.route("/")
+def index():
+    return "Welcome to the Docling converter API. Use /keyword or /convert."
+
 @app.route("/markdown", methods=["POST"])
 def convert_to_markdown():
     try:
