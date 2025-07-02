@@ -13,6 +13,7 @@ def convert_to_markdown():
 
         uploaded_file = request.files['file']
         markdown_text = utils.convert_file_to_markdown(uploaded_file)
+        print("success")
         return markdown_text, 200, {'Content-Type': 'text/markdown'}
     
     except Exception as e:
@@ -46,11 +47,14 @@ def extract_keywords():
 
         query_keywords = utils.get_keywords(user_query)
         return jsonify(query_keywords), 200
-    
+
     except Exception as e:
         logging.error(f"Error splicing query: {str(e)}")
         return f"Error: {str(e)}", 500
 
+# https://None@docling-converter-bsfvd4effgczbqbj.scm.canadacentral-01.azurewebsites.net/docling-converter.git
+# curl -X POST -F "file=@/Users/isabeltilles/Downloads/testfile.pdf" https://docling-converter-bsfvd4effgczbqbj.canadacentral-01.azurewebsites.net/markdown
+# curl -X POST docling-converter-bsfvd4effgczbqbj.canadacentral-01.azurewebsites.net/keyword?query=what+is+the+impact+of+climate+change+on+farming
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
