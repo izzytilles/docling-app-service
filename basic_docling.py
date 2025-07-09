@@ -1,6 +1,10 @@
 import logging
 from flask import Flask, request, jsonify
 import utils
+import traceback
+import tempfile
+import psutil
+import os
 
 app = Flask(__name__)
 
@@ -10,6 +14,8 @@ def index():
 
 @app.route("/markdown", methods=["POST"])
 def convert_to_markdown():
+    process = psutil.Process(os.getpid())
+    print(f"[BEFORE] Memory usage: {process.memory_info().rss / 1024**2:.2f} MB")
     try:
         # get file name from request
         if 'file' not in request.files:
@@ -17,7 +23,15 @@ def convert_to_markdown():
 
         uploaded_file = request.files['file']
         markdown_text = utils.convert_file_to_markdown(uploaded_file)
-        print("success")
+
+        if not markdown_text.strip():
+            print("Empty markdown output")
+            return "No content extracted from file.", 204  # no Content
+        
+        print(f"[AFTER] Memory usage: {process.memory_info().rss / 1024**2:.2f} MB")
+
+        print(markdown_text[:500])  # print first 500 chars
+
         return markdown_text, 200, {'Content-Type': 'text/markdown'}
     
     except Exception as e:
@@ -36,7 +50,7 @@ def convert_to_embedding():
         markdown_text = utils.convert_file_to_markdown(uploaded_file)
         embedded_docs = utils.chunk_and_embed_file(markdown_text)
         return jsonify(embedded_docs), 200, {'Content-Type': 'application/json'}
-    
+
     except Exception as e:
         logging.error(f"Error processing file: {str(e)}")
         return f"Error: {str(e)}", 500
@@ -59,6 +73,8 @@ def extract_keywords():
 # https://None@docling-converter-bsfvd4effgczbqbj.scm.canadacentral-01.azurewebsites.net/docling-converter.git
 # curl -X POST -F "file=@/Users/isabeltilles/Downloads/testfile.pdf" https://docling-converter-bsfvd4effgczbqbj.canadacentral-01.azurewebsites.net/markdown
 # curl -X POST docling-converter-bsfvd4effgczbqbj.canadacentral-01.azurewebsites.net/keyword?query=what+is+the+impact+of+climate+change+on+farming
+# curl -X POST "http://0.0.0.0:8000/keyword?query=what+is+the+impact+of+climate+change+on+farming"
+# curl -X POST -F "file=@/Users/isabeltilles/Downloads/testfile.pdf" http://0.0.0.0:8000/markdown
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

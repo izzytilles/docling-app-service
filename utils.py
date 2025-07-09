@@ -8,12 +8,11 @@ import tempfile
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai import AzureOpenAIEmbeddings
 # keyword extraction imports
-import spacy
-nlp = spacy.load("en_core_web_sm")
+import yake
 
 
 def convert_file_to_markdown(uploaded_file):
-    """"
+    """
     Takes a file, converts it to markdown using Docling, and returns the markdown text
     Args:
         uploaded_file (FileStorage): The file to be processed, expected to be a DOCX or PDF file
@@ -26,8 +25,9 @@ def convert_file_to_markdown(uploaded_file):
 
             # process the file to markdown
             converter = DocumentConverter()
-            result = converter.convert(temp_file.name)
-            markdown_text = result.document.export_to_markdown()
+            result = converter.convert(temp_file.name).document
+
+            markdown_text = result.export_to_markdown()
     return markdown_text
 
 def chunk_and_embed_file(uploaded_txt):
@@ -52,8 +52,7 @@ def chunk_and_embed_file(uploaded_txt):
     )
     # split text into semantic chunks
     text_splitter = SemanticChunker(embedder, 
-                                    breakpoint_threshold_type="percentile", 
-                                    breakpoint_threshold_amount=0.85)
+                                    breakpoint_threshold_type ="standard_deviation")
     docs = text_splitter.create_documents([uploaded_txt])
 
     embeddings = embedder.embed_documents([doc.page_content for doc in docs])
@@ -65,7 +64,7 @@ def chunk_and_embed_file(uploaded_txt):
 
 def get_keywords(query):
     """
-    Extracts keywords from the given query using SpaCy
+    Extracts keywords from the given query using Yake!
 
     Args:
         query (str): the query to analyze
@@ -73,12 +72,7 @@ def get_keywords(query):
         keywords (list of str): a list of keywords extracted from the query
 
     Notes:
-        Uses token.lemma_ to perform lemmatization (reducing words to base form to avoid redundant key words)
-        SpaCy documentation: https://spacy.io/usage/spacy-101
+        Yake! documentation: https://liaad.github.io/yake/docs/--home
     """
-    doc = nlp(query)
-    return [
-        token.lemma_ for token in doc 
-        if token.pos_ in {"NOUN", "PROPN", "ADJ", "VERB"} 
-        and not token.is_stop and token.is_alpha
-    ]
+    kw_extractor = yake.KeywordExtractor()
+    return [kw for kw, score in kw_extractor.extract_keywords(query)]
