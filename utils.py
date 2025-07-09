@@ -2,7 +2,13 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 # markdown imports
-from docling.document_converter import DocumentConverter
+from docling.datamodel.base_models import InputFormat
+# from docling.datamodel.pipeline_options import (
+#     # PdfPipelineOptions,
+#     # TesseractOcrOptions,
+# )
+from docling.document_converter import DocumentConverter, PdfFormatOption
+from docling.pipeline.vlm_pipeline import VlmPipeline
 import tempfile
 # semantic chunker imports
 from langchain_experimental.text_splitter import SemanticChunker
@@ -24,7 +30,18 @@ def convert_file_to_markdown(uploaded_file):
             uploaded_file.save(temp_file.name)
 
             # process the file to markdown
-            converter = DocumentConverter()
+            # pipeline_options = PdfPipelineOptions()
+            # pipeline_options.do_ocr = True
+            # pipeline_options.do_table_structure = True
+            # pipeline_options.table_structure_options.do_cell_matching = True
+            # pipeline_options.ocr_options = TesseractOcrOptions()
+
+            converter = DocumentConverter(
+                format_options={
+                    InputFormat.PDF: PdfFormatOption(pipeline_cls=VlmPipeline,),
+                }
+            )
+            # converter = DocumentConverter()
             result = converter.convert(temp_file.name).document
 
             markdown_text = result.export_to_markdown()

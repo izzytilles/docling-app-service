@@ -26,7 +26,7 @@ def convert_to_markdown():
 
         if not markdown_text.strip():
             print("Empty markdown output")
-            return "No content extracted from file.", 204  # no Content
+            return "No content extracted from file.", 204  # no content
         
         print(f"[AFTER] Memory usage: {process.memory_info().rss / 1024**2:.2f} MB")
 
