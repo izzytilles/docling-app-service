@@ -13,7 +13,6 @@ from langchain_openai import AzureOpenAIEmbeddings
 # keyword extraction imports
 import yake
 
-
 def convert_file_to_markdown(uploaded_file):
     """
     Takes a file, converts it to markdown using Docling, and returns the markdown text
@@ -38,7 +37,6 @@ def convert_file_to_markdown(uploaded_file):
     result = poller.result()
 
     return result.content
-
 
 def chunk_and_embed_file(uploaded_txt):
     """

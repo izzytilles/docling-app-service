@@ -6,6 +6,16 @@ import os
 
 app = Flask(__name__)
 
+def require_api_key(f):
+    def wrapper(*args, **kwargs):
+        expected_api_key = os.getenv("API_KEY")
+        user_api_key = request.headers.get("x-api-key")
+        if not user_api_key or user_api_key != expected_api_key:
+            return "Invalid API Key", 403
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__  # for flask route registration
+    return wrapper
+
 @app.route("/")
 def index():
     return "Welcome to the Docling converter API. Use /markdown, /embedding, or /keyword."
@@ -15,9 +25,10 @@ def health_check():
     return "OK", 200
 
 @app.route("/markdown", methods=["POST"])
+@require_api_key
 def convert_to_markdown():
     process = psutil.Process(os.getpid())
-    print(f"[BEFORE] Memory usage: {process.memory_info().rss / 1024**2:.2f} MB")
+
     try:
         # get file name from request
         if 'file' not in request.files:
@@ -29,16 +40,15 @@ def convert_to_markdown():
         if not markdown_text.strip():
             print("Empty markdown output")
             return "No content extracted from file.", 204  # no content
-        
-        print(f"[AFTER] Memory usage: {process.memory_info().rss / 1024**2:.2f} MB")
 
         return markdown_text, 200, {'Content-Type': 'text/markdown'}
-    
+
     except Exception as e:
         logging.error(f"Error processing file: {str(e)}")
         return f"Error: {str(e)}", 500
 
 @app.route("/embedding", methods=["POST"])
+@require_api_key
 def convert_to_embedding():
     try:
         # get file name from request
@@ -56,6 +66,7 @@ def convert_to_embedding():
         return f"Error: {str(e)}", 500
 
 @app.route("/keyword", methods=["POST"])
+@require_api_key
 def extract_keywords():
     try:
         # get user query from query parameters
