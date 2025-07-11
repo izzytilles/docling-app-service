@@ -1,8 +1,6 @@
 import logging
 from flask import Flask, request, jsonify
 import utils
-import traceback
-import tempfile
 import psutil
 import os
 
@@ -10,7 +8,11 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "Welcome to the Docling converter API. Use /keyword or /convert."
+    return "Welcome to the Docling converter API. Use /markdown, /embedding, or /keyword."
+
+@app.route("/health")
+def health_check():
+    return "OK", 200
 
 @app.route("/markdown", methods=["POST"])
 def convert_to_markdown():
@@ -29,8 +31,6 @@ def convert_to_markdown():
             return "No content extracted from file.", 204  # no content
         
         print(f"[AFTER] Memory usage: {process.memory_info().rss / 1024**2:.2f} MB")
-
-        print(markdown_text[:500])  # print first 500 chars
 
         return markdown_text, 200, {'Content-Type': 'text/markdown'}
     

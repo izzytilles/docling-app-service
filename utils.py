@@ -2,13 +2,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 # markdown imports
-from docling.datamodel.base_models import InputFormat
-# from docling.datamodel.pipeline_options import (
-#     # PdfPipelineOptions,
-#     # TesseractOcrOptions,
-# )
-from docling.document_converter import DocumentConverter, PdfFormatOption
-from docling.pipeline.vlm_pipeline import VlmPipeline
+from azure.ai.documentintelligence import DocumentIntelligenceClient
+from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
+from azure.core.credentials import AzureKeyCredential
+
 import tempfile
 # semantic chunker imports
 from langchain_experimental.text_splitter import SemanticChunker
@@ -25,27 +22,23 @@ def convert_file_to_markdown(uploaded_file):
     Returns:
         markdown_text (str): The converted markdown text from the file
     """
-    # download passed file to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            uploaded_file.save(temp_file.name)
+    # turn file into bytes 
+    file_bytes = uploaded_file.read()
+    binary_data = file_bytes
 
-            # process the file to markdown
-            # pipeline_options = PdfPipelineOptions()
-            # pipeline_options.do_ocr = True
-            # pipeline_options.do_table_structure = True
-            # pipeline_options.table_structure_options.do_cell_matching = True
-            # pipeline_options.ocr_options = TesseractOcrOptions()
+    # create a client for azure doc intelligence
+    document_intelligence_client = DocumentIntelligenceClient(endpoint=os.getenv("DOC_INTELLIGENCE_ENDPOINT"), credential=AzureKeyCredential(os.getenv("DOC_INTELLIGENCE_KEY")))
+    # set options for converter
+    doc_to_analyze = AnalyzeDocumentRequest(bytes_source = binary_data)
+    poller = document_intelligence_client.begin_analyze_document(
+        model_id = "prebuilt-read",
+        analyze_request = doc_to_analyze,
+        output_content_format = "markdown"
+    )
+    result = poller.result()
 
-            converter = DocumentConverter(
-                format_options={
-                    InputFormat.PDF: PdfFormatOption(pipeline_cls=VlmPipeline,),
-                }
-            )
-            # converter = DocumentConverter()
-            result = converter.convert(temp_file.name).document
+    return result.content
 
-            markdown_text = result.export_to_markdown()
-    return markdown_text
 
 def chunk_and_embed_file(uploaded_txt):
     """
