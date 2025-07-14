@@ -3,13 +3,28 @@ from flask import Flask, request, jsonify
 import utils
 import psutil
 import os
+from azure.keyvault.secrets import SecretClient
+from azure.identity import DefaultAzureCredential
 
 app = Flask(__name__)
 
+@app.before_first_request
+def get_api_key():
+    key_vault_name = os.getenv("KEY_VAULT_NAME")
+    vault_uri = f"https://{key_vault_name}.vault.azure.net"
+    secret_name = os.getenv("API_KEY_SECRET_NAME")
+    credential = DefaultAzureCredential()
+    client = SecretClient(vault_url=vault_uri, credential=credential)
+    retrieved_secret = client.get_secret(secret_name)
+
+    expected_api_key = retrieved_secret.value
+    app.config['API_KEY'] = expected_api_key # cache the key
+
 def require_api_key(f):
     def wrapper(*args, **kwargs):
-        expected_api_key = os.getenv("API_KEY")
-        user_api_key = request.headers.get("x-api-key")
+        user_api_key = request.headers.get("api-key")
+
+        expected_api_key = app.config.get('API_KEY')
         if not user_api_key or user_api_key != expected_api_key:
             return "Invalid API Key", 403
         return f(*args, **kwargs)
@@ -70,22 +85,18 @@ def convert_to_embedding():
 def extract_keywords():
     try:
         # get user query from query parameters
-        user_query = request.args.get('query')
-        if not user_query:
+        user_query = request.get_json()
+        if 'query' not in user_query:
             return "Please provide a query", 400
-
-        query_keywords = utils.get_keywords(user_query)
+        
+        query_text = user_query['query']
+        query_keywords = utils.get_keywords(query_text)
         return jsonify(query_keywords), 200
 
     except Exception as e:
         logging.error(f"Error splicing query: {str(e)}")
         return f"Error: {str(e)}", 500
 
-# https://None@docling-converter-bsfvd4effgczbqbj.scm.canadacentral-01.azurewebsites.net/docling-converter.git
-# curl -X POST -F "file=@/Users/isabeltilles/Downloads/testfile.pdf" https://docling-converter-bsfvd4effgczbqbj.canadacentral-01.azurewebsites.net/markdown
-# curl -X POST docling-converter-bsfvd4effgczbqbj.canadacentral-01.azurewebsites.net/keyword?query=what+is+the+impact+of+climate+change+on+farming
-# curl -X POST "http://0.0.0.0:8000/keyword?query=what+is+the+impact+of+climate+change+on+farming"
-# curl -X POST -F "file=@/Users/isabeltilles/Downloads/testfile.pdf" http://0.0.0.0:8000/markdown
-
+# for local flask app testing
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

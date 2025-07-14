@@ -81,6 +81,9 @@ def get_keywords(query):
 
     Notes:
         Yake! documentation: https://liaad.github.io/yake/docs/--home
+        Number of keywords is set to half of the length of the query
     """
-    kw_extractor = yake.KeywordExtractor()
+    num_keywords = int(len(query.split())/2)
+    print(f"Extracting {num_keywords} keywords from query: {query}")
+    kw_extractor = yake.KeywordExtractor(top=num_keywords)
     return [kw for kw, score in kw_extractor.extract_keywords(query)]
