@@ -1,14 +1,18 @@
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, current_app
 import utils
 import psutil
 import os
+# azure key vault imports
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential
 
-app = Flask(__name__)
+def create_app():
+    app = Flask(__name__)
+    with app.app_context():
+        get_api_key()
+    return app
 
-@app.before_first_request
 def get_api_key():
     key_vault_name = os.getenv("KEY_VAULT_NAME")
     vault_uri = f"https://{key_vault_name}.vault.azure.net"
@@ -18,13 +22,13 @@ def get_api_key():
     retrieved_secret = client.get_secret(secret_name)
 
     expected_api_key = retrieved_secret.value
-    app.config['API_KEY'] = expected_api_key # cache the key
+    current_app.config['API_KEY'] = expected_api_key # cache the key
 
 def require_api_key(f):
     def wrapper(*args, **kwargs):
         user_api_key = request.headers.get("api-key")
 
-        expected_api_key = app.config.get('API_KEY')
+        expected_api_key = current_app.config.get("API_KEY")
         if not user_api_key or user_api_key != expected_api_key:
             return "Invalid API Key", 403
         return f(*args, **kwargs)
@@ -99,4 +103,4 @@ def extract_keywords():
 
 # for local flask app testing
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    current_app.run(host="0.0.0.0", port=5001, debug=True)

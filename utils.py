@@ -5,13 +5,13 @@ load_dotenv()
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 from azure.core.credentials import AzureKeyCredential
-
 import tempfile
 # semantic chunker imports
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai import AzureOpenAIEmbeddings
 # keyword extraction imports
 import yake
+
 
 def convert_file_to_markdown(uploaded_file):
     """
