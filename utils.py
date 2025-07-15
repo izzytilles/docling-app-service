@@ -30,7 +30,7 @@ def convert_file_to_markdown(uploaded_file):
     # set options for converter
     doc_to_analyze = AnalyzeDocumentRequest(bytes_source = binary_data)
     poller = document_intelligence_client.begin_analyze_document(
-        model_id = "prebuilt-read",
+        model_id = "layout",
         analyze_request = doc_to_analyze,
         output_content_format = "markdown"
     )
