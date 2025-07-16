@@ -1,5 +1,7 @@
 azure-ai-documentintelligence==1.0.0b4
 azure-core>=1.29.1
+azure-identity
+azure-keyvault-secrets
 flask
 requests
 langchain_openai
